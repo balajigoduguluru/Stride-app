@@ -1,61 +1,58 @@
 import React from 'react';
-import { AppProvider, useApp } from './context/AppContext';
+import { useApp } from './context/AppContext';
 import { NavigationRail } from './components/NavigationRail';
 import { Navbar } from './components/Navbar';
-import { CustomerChatWidget } from './components/CustomerChatWidget';
 import { OwnerDashboard } from './components/OwnerDashboard';
+import { CustomerChatWidget } from './components/CustomerChatWidget';
 import { RightDrawerPanel } from './components/RightDrawerPanel';
-
-function ThreePaneWorkspaceScaffold() {
-  const { activeView } = useApp();
-
-  return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#F8F9FA]">
-      
-      {/* PANE 1 (LEFT): Collapsible Navigation Rail (256px <-> 64px Footprint) */}
-      <NavigationRail />
-
-      {/* PANE 2 (CENTER): Core Workspace Canvas */}
-      <main className="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
-        <Navbar />
-
-        <div className="flex-1 p-6 overflow-hidden flex flex-col min-h-0">
-          {activeView === 'split' && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
-              <div className="lg:col-span-5 h-[calc(100vh-140px)]">
-                <CustomerChatWidget />
-              </div>
-              <div className="lg:col-span-7 h-[calc(100vh-140px)] overflow-y-auto custom-scrollbar">
-                <OwnerDashboard />
-              </div>
-            </div>
-          )}
-
-          {activeView === 'customer' && (
-            <div className="max-w-3xl mx-auto w-full h-[calc(100vh-140px)]">
-              <CustomerChatWidget />
-            </div>
-          )}
-
-          {activeView === 'owner' && (
-            <div className="h-[calc(100vh-140px)] overflow-y-auto custom-scrollbar">
-              <OwnerDashboard />
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* PANE 3 (RIGHT): Context-Aware RightDrawerPanel (Locked 380px Footprint) */}
-      <RightDrawerPanel />
-
-    </div>
-  );
-}
+import { Zap } from 'lucide-react';
 
 export default function App() {
+  const { activeView, activeRightPanel, webhookToast } = useApp();
+
   return (
-    <AppProvider>
-      <ThreePaneWorkspaceScaffold />
-    </AppProvider>
+    <div className="min-h-screen bg-[#F8F9FA] text-[#1A1C1E] flex flex-col font-sans selection:bg-[#D3E3FD] selection:text-[#041E49]">
+      
+      {/* Top Application Navigation Bar */}
+      <Navbar />
+
+      {/* Main Structural Three-Pane Layout Frame */}
+      <div className="flex-1 flex overflow-hidden">
+        
+        {/* Pane 1: Left Collapsible Navigation Rail */}
+        <NavigationRail />
+
+        {/* Pane 2: Core Workspace Canvas Viewport */}
+        <main className="flex-1 p-6 overflow-y-auto max-h-[calc(100vh-80px)] custom-scrollbar bg-[#F8F9FA]">
+          {activeView === 'board' && <OwnerDashboard />}
+          {activeView === 'chat' && <CustomerChatWidget />}
+          {activeView === 'split' && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full min-h-[680px]">
+              <div className="h-full">
+                <OwnerDashboard />
+              </div>
+              <div className="h-full">
+                <CustomerChatWidget />
+              </div>
+            </div>
+          )}
+        </main>
+
+        {/* Pane 3: Context-Aware 380px Co-Planar Utility Sheet */}
+        {activeRightPanel && <RightDrawerPanel />}
+
+      </div>
+
+      {/* FLOATING WHATSAPP WEBHOOK TOAST BANNER */}
+      {webhookToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#041E49] text-white px-5 py-3 rounded-full shadow-lg flex items-center gap-3 animate-fade-in border border-[#0B57D0]">
+          <div className="w-7 h-7 rounded-full bg-[#0F9D58] flex items-center justify-center text-white text-xs shrink-0">
+            <Zap className="w-4 h-4 fill-current" />
+          </div>
+          <span className="text-xs font-semibold font-mono">{webhookToast}</span>
+        </div>
+      )}
+
+    </div>
   );
 }

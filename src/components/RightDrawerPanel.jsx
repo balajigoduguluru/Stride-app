@@ -15,7 +15,8 @@ import {
   BookOpen, 
   Plus, 
   Save, 
-  Check 
+  Check,
+  Download
 } from 'lucide-react';
 
 export function RightDrawerPanel() {
@@ -27,7 +28,8 @@ export function RightDrawerPanel() {
     updateCardStatus, 
     deleteCard,
     knowledgeBase,
-    setKnowledgeBase
+    setKnowledgeBase,
+    handleExportCSV
   } = useApp();
 
   const [customActionText, setCustomActionText] = useState('');
@@ -203,11 +205,16 @@ export function RightDrawerPanel() {
           </>
         )}
 
-        {/* VIEW 2: CLEAN PLAIN TEXT ANALYTICS SUMMARY */}
+        {/* VIEW 2: CLEAN PLAIN TEXT ANALYTICS SUMMARY + EXPORT CSV BUTTON */}
         {activeRightPanel === 'analytics' && (
           <>
             <div className="bg-[#F0F4F9] rounded-2xl p-6 space-y-4">
-              <h4 className="font-bold text-xs uppercase text-[#43474E] tracking-wider font-heading">Pipeline Overview</h4>
+              <div className="flex items-center justify-between">
+                <h4 className="font-bold text-xs uppercase text-[#43474E] tracking-wider font-heading">Pipeline Overview</h4>
+                <Button size="sm" variant="accent" icon={Download} onClick={handleExportCSV}>
+                  Export CSV
+                </Button>
+              </div>
               
               <div className="space-y-3 text-xs text-[#1A1C1E]">
                 <div className="flex justify-between py-1 border-b border-[#E1E9F5]/50">

@@ -1,249 +1,226 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { initialCards, initialMessages, presetScenarios } from '../services/initialData';
+import { analyzeCustomerMessage } from '../services/ai/engine';
 import { defaultKnowledgeBase } from '../services/knowledgeBase';
-import { classifyIntent, extractEntities, decideWorkflow } from '../services/aiEngine';
+import { triggerWhatsAppWebhook, exportPipelineToCSV } from '../services/webhookEngine';
 
 const AppContext = createContext();
 
 export function AppProvider({ children }) {
-  // 1. Three-Pane Layout & Panel Navigation State
-  const [activeView, setActiveView] = useState('split'); // 'split' | 'customer' | 'owner'
-  const [isNavCollapsed, setIsNavCollapsed] = useState(false); // 256px <-> 64px
+  // Navigation & View Layout State
+  const [activeView, setActiveView] = useState('board'); // 'board' | 'chat' | 'split'
+  const [isNavExpanded, setIsNavExpanded] = useState(true);
+  
+  // Right-Side Co-Planar Sheet Drawer State
   const [activeRightPanel, setActiveRightPanel] = useState(null); // null | 'card' | 'analytics' | 'kb'
+  const [selectedCardId, setSelectedCardId] = useState(null);
 
-  // 2. Persistent Domain Data State initialized with LocalStorage retrieval
+  // Webhook Toast Banner State
+  const [webhookToast, setWebhookToast] = useState(null);
+
+  // Persistence State Hooks
   const [cards, setCards] = useState(() => {
-    try {
-      const saved = localStorage.getItem('stride_cards');
-      return saved ? JSON.parse(saved) : initialCards;
-    } catch {
-      return initialCards;
-    }
+    const saved = localStorage.getItem('stride_cards');
+    return saved ? JSON.parse(saved) : initialCards;
   });
 
   const [messages, setMessages] = useState(() => {
-    try {
-      const saved = localStorage.getItem('stride_messages');
-      return saved ? JSON.parse(saved) : initialMessages;
-    } catch {
-      return initialMessages;
-    }
+    const saved = localStorage.getItem('stride_messages');
+    return saved ? JSON.parse(saved) : initialMessages;
   });
 
   const [knowledgeBase, setKnowledgeBase] = useState(() => {
-    try {
-      const saved = localStorage.getItem('stride_kb');
-      return saved ? JSON.parse(saved) : defaultKnowledgeBase;
-    } catch {
-      return defaultKnowledgeBase;
-    }
+    const saved = localStorage.getItem('stride_kb');
+    return saved ? JSON.parse(saved) : defaultKnowledgeBase;
   });
 
-  // 3. Selection & AI Action State
-  const [selectedCardId, setSelectedCardId] = useState(null);
   const [lastAiAction, setLastAiAction] = useState(null);
 
-  // LocalStorage Persistence Synchronization Effects
+  // LocalStorage Persistence Effects
   useEffect(() => {
-    try {
-      localStorage.setItem('stride_cards', JSON.stringify(cards));
-    } catch (e) {
-      console.warn("Could not save cards to LocalStorage:", e);
-    }
+    localStorage.setItem('stride_cards', JSON.stringify(cards));
   }, [cards]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('stride_messages', JSON.stringify(messages));
-    } catch (e) {
-      console.warn("Could not save messages to LocalStorage:", e);
-    }
+    localStorage.setItem('stride_messages', JSON.stringify(messages));
   }, [messages]);
 
   useEffect(() => {
-    try {
-      localStorage.setItem('stride_kb', JSON.stringify(knowledgeBase));
-    } catch (e) {
-      console.warn("Could not save knowledge base to LocalStorage:", e);
-    }
+    localStorage.setItem('stride_kb', JSON.stringify(knowledgeBase));
   }, [knowledgeBase]);
 
-  // Drawer Panel Navigation Controllers
+  // Toast Auto-Dismiss
+  useEffect(() => {
+    if (webhookToast) {
+      const timer = setTimeout(() => setWebhookToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [webhookToast]);
+
+  // Drawer Controls
+  const toggleNavRail = () => setIsNavExpanded(prev => !prev);
+
   const openCardDrawer = (cardId) => {
     setSelectedCardId(cardId);
     setActiveRightPanel('card');
   };
 
   const openAnalyticsDrawer = () => {
+    setSelectedCardId(null);
     setActiveRightPanel('analytics');
   };
 
   const openKbDrawer = () => {
+    setSelectedCardId(null);
     setActiveRightPanel('kb');
   };
 
   const closeRightDrawer = () => {
     setActiveRightPanel(null);
+    setSelectedCardId(null);
   };
 
-  // moveCard function to handle state transitions between Kanban lanes
+  // Card Operations with Webhook Trigger
   const moveCard = (cardId, newLane) => {
-    setCards(prev => prev.map(c => {
-      if (c.id === cardId) {
-        return {
-          ...c,
+    setCards(prev => prev.map(card => {
+      if (card.id === cardId) {
+        const updated = {
+          ...card,
           lane: newLane,
-          updatedAt: new Date().toISOString(),
           timeline: [
-            ...c.timeline,
-            { 
-              timestamp: new Date().toISOString(), 
-              author: "Owner", 
-              text: `Lane Transition: Moved card to ${newLane.toUpperCase()}` 
-            }
+            ...card.timeline,
+            { timestamp: new Date().toISOString(), author: 'Operator', text: `Moved card to ${newLane} lane` }
           ]
         };
+        // Fire Simulated Webhook
+        triggerWhatsAppWebhook(updated, `moved_to_${newLane}`);
+        setWebhookToast(`📱 WhatsApp Webhook Sent: ${updated.customerName} (${updated.phone}) updated to ${newLane.toUpperCase()}`);
+        return updated;
       }
-      return c;
+      return card;
     }));
   };
 
-  const updateCardLane = moveCard;
-
-  // Execute 1-Tap Workflow Action Update
-  const updateCardStatus = (cardId, newStatus, actionNote) => {
-    setCards(prev => prev.map(c => {
-      if (c.id === cardId) {
-        let updatedLane = c.lane;
-        if (newStatus === "Confirmed" && c.lane === "leads") updatedLane = "bookings";
-        if (newStatus === "Visit Scheduled") updatedLane = "bookings";
-        if (newStatus === "Completed") updatedLane = "followups";
-
-        return {
-          ...c,
+  const updateCardStatus = (cardId, newStatus, note = '') => {
+    setCards(prev => prev.map(card => {
+      if (card.id === cardId) {
+        const updated = {
+          ...card,
           status: newStatus,
-          lane: updatedLane,
-          updatedAt: new Date().toISOString(),
-          recommendedAction: actionNote || c.recommendedAction,
           timeline: [
-            ...c.timeline,
-            { 
-              timestamp: new Date().toISOString(), 
-              author: "Owner", 
-              text: `Status Executed: ${newStatus}. ${actionNote || ''}` 
-            }
+            ...card.timeline,
+            { timestamp: new Date().toISOString(), author: 'Operator', text: note || `Updated status to ${newStatus}` }
           ]
         };
+        // Fire Simulated Webhook
+        triggerWhatsAppWebhook(updated, newStatus);
+        setWebhookToast(`📱 WhatsApp Webhook Sent: ${updated.customerName} status updated to ${newStatus}`);
+        return updated;
       }
-      return c;
+      return card;
     }));
   };
 
-  // Delete Card Handler
   const deleteCard = (cardId) => {
     setCards(prev => prev.filter(c => c.id !== cardId));
     if (selectedCardId === cardId) {
-      setSelectedCardId(null);
       closeRightDrawer();
     }
   };
 
-  // Customer Chat Message Pipeline
-  const sendMessage = (userText) => {
-    if (!userText.trim()) return;
-
-    const userMsgObj = {
+  // Customer Chat Message Processing Engine
+  const sendMessage = (text, sender = 'customer') => {
+    const newMsg = {
       id: "msg-" + Date.now(),
-      sender: "customer",
-      text: userText,
+      sender,
+      text,
       timestamp: new Date().toISOString()
     };
 
-    setMessages(prev => [...prev, userMsgObj]);
+    setMessages(prev => [...prev, newMsg]);
 
-    // AI Classification Engine
-    const intentRes = classifyIntent(userText);
-    const entities = extractEntities(userText);
-    const decision = decideWorkflow(intentRes.intent, entities, userText, {
-      kb: knowledgeBase,
-      customerName: "Customer (" + entities.location + ")"
-    });
+    if (sender === 'customer') {
+      setTimeout(() => {
+        const analysis = analyzeCustomerMessage(text);
+        
+        setLastAiAction({
+          intent: analysis.intent,
+          confidence: analysis.confidence,
+          entities: analysis.entities,
+          timestamp: new Date().toISOString()
+        });
 
-    setLastAiAction({
-      intent: intentRes.intent,
-      confidence: intentRes.confidence,
-      entities,
-      workflowType: decision.workflowType,
-      timestamp: new Date().toISOString()
-    });
+        if (analysis.cardCreated && analysis.cardData) {
+          setCards(prev => {
+            const exists = prev.some(c => c.id === analysis.cardData.id);
+            if (exists) return prev;
+            return [analysis.cardData, ...prev];
+          });
+        }
 
-    if (decision.cardCreated && decision.cardData) {
-      setCards(prev => [decision.cardData, ...prev]);
+        const botReply = {
+          id: "msg-" + (Date.now() + 1),
+          sender: "bot",
+          text: analysis.draftReply,
+          intentTag: analysis.intent.toLowerCase(),
+          timestamp: new Date().toISOString()
+        };
+
+        setMessages(prev => [...prev, botReply]);
+      }, 700);
     }
-
-    setTimeout(() => {
-      const botMsgObj = {
-        id: "msg-bot-" + Date.now(),
-        sender: "bot",
-        text: decision.replyText,
-        intentTag: intentRes.intent,
-        timestamp: new Date().toISOString()
-      };
-      setMessages(prev => [...prev, botMsgObj]);
-    }, 400);
   };
 
   const triggerScenario = (scenario) => {
-    sendMessage(scenario.message);
+    sendMessage(scenario.message, 'customer');
   };
 
-  // Reset Demo Data Handler
+  const handleExportCSV = () => {
+    exportPipelineToCSV(cards);
+    setWebhookToast(`📊 Pipeline CSV Report downloaded successfully!`);
+  };
+
   const resetDemoData = () => {
+    localStorage.removeItem('stride_cards');
+    localStorage.removeItem('stride_messages');
+    localStorage.removeItem('stride_kb');
     setCards(initialCards);
     setMessages(initialMessages);
     setKnowledgeBase(defaultKnowledgeBase);
-    setSelectedCardId(null);
     setLastAiAction(null);
-    setActiveRightPanel(null);
-    try {
-      localStorage.removeItem('stride_cards');
-      localStorage.removeItem('stride_messages');
-      localStorage.removeItem('stride_kb');
-    } catch (e) {
-      console.warn("Could not clear LocalStorage:", e);
-    }
+    closeRightDrawer();
   };
 
-  const selectedCard = cards.find(c => c.id === selectedCardId) || null;
+  const selectedCard = cards.find(c => c.id === selectedCardId);
 
   return (
     <AppContext.Provider value={{
       activeView,
       setActiveView,
-      isNavCollapsed,
-      setIsNavCollapsed,
+      isNavExpanded,
+      toggleNavRail,
       activeRightPanel,
-      setActiveRightPanel,
       openCardDrawer,
       openAnalyticsDrawer,
       openKbDrawer,
       closeRightDrawer,
-      cards,
-      setCards,
-      messages,
-      knowledgeBase,
-      setKnowledgeBase,
-      selectedCard,
+      selectedCardId,
       setSelectedCardId,
-      lastAiAction,
-      sendMessage,
-      triggerScenario,
+      selectedCard,
+      cards,
       moveCard,
-      updateCardLane,
       updateCardStatus,
       deleteCard,
+      messages,
+      sendMessage,
+      triggerScenario,
+      presetScenarios,
+      knowledgeBase,
+      setKnowledgeBase,
+      lastAiAction,
       resetDemoData,
-      presetScenarios
+      webhookToast,
+      handleExportCSV
     }}>
       {children}
     </AppContext.Provider>
@@ -251,5 +228,9 @@ export function AppProvider({ children }) {
 }
 
 export function useApp() {
-  return useContext(AppContext);
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useApp must be used within an AppProvider');
+  }
+  return context;
 }
