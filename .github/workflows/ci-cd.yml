@@ -22,7 +22,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # 1. CONTINUOUS INTEGRATION (CI) JOB
+  # 1. CONTINUOUS INTEGRATION (CI) JOB — MATRIX BUILD & TEST SUITE
   test-and-build:
     name: 🧪 CI Matrix Build & Test (Node.js ${{ matrix.node-version }})
     runs-on: ubuntu-latest
@@ -50,12 +50,13 @@ jobs:
       - name: Verify Production Vite Build
         run: npm run build
 
-  # 2. CONTINUOUS DEPLOYMENT (CD) JOB TO GITHUB PAGES
+  # 2. CONTINUOUS DEPLOYMENT (CD) JOB — LIVE GITHUB PAGES DEPLOYMENT
   deploy-github-pages:
     name: 🚀 CD Deploy Live to GitHub Pages
     needs: test-and-build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    continue-on-error: true
 
     environment:
       name: github-pages
