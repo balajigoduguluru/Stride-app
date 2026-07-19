@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --color-m3-surface: #F8F9FA;
+  --color-m3-container: #FFFFFF;
+  --color-m3-input: #F0F4F9;
+  --color-m3-text-primary: #1A1C1E;
+  --color-m3-text-secondary: #43474E;
+  --color-m3-error: #EA4335;
+  --color-m3-success: #0F9D58;
+
+  --font-sans: 'Google Sans', 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-heading: 'Google Sans', 'Plus Jakarta Sans', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --ease-m3-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-m3-decelerate: cubic-bezier(0, 0, 0.2, 1);
+  --ease-m3-accelerate: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Expanded 25% Whitespace Scale */
+  --spacing-8dp-1: 10px;
+  --spacing-8dp-2: 20px;
+  --spacing-8dp-3: 30px;
+  --spacing-8dp-4: 40px;
+  --spacing-8dp-5: 50px;
+  --spacing-8dp-6: 60px;
+}
+
+@layer base {
+  * {
+    border-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-m3-surface, #F8F9FA);
+    color: var(--color-m3-text-primary, #1A1C1E);
+    font-family: var(--font-sans);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    letter-spacing: -0.01em;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+    font-weight: 700;
+  }
+}
+
+/* Minimal M3 Card Surface */
+.minimal-card {
+  background-color: #ffffff;
+  border-radius: 24px;
+  padding: 24px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.04);
+  transition: all 250ms cubic-bezier(0.2, 0, 0, 1);
+  border: none !important;
+}
+
+.minimal-card:hover {
+  box-shadow: 0 8px 24px 0 rgba(0, 0, 0, 0.06);
+  transform: translateY(-2px);
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(248, 249, 250, 0.8);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(196, 199, 197, 0.8);
+  border-radius: 9999px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #0b57d0;
+}
+
+/* Keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 250ms cubic-bezier(0.2, 0, 0, 1) forwards;
+}
