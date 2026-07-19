@@ -8,11 +8,31 @@
 [![Tailwind CSS v4](https://img.shields.io/badge/Tailwind-v4.0-38BDF8?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.style=for-the-badge)](#license)
 
-**Stride** is a modern, high-performance AI Operations Co-Pilot engineered under Google Material Design 3 (M3) standards to help SMB operators automate incoming customer chat streams into actionable 4-lane operational task cards.
+**Stride** is an enterprise-grade AI Operations Co-Pilot for small businesses (SMBs). Built strictly under Google Material Design 3 (M3) standards, Stride transforms incoming customer messaging streams into actionable, 4-lane operational task cards with inline 1-tap task execution and automated financial revenue tracking.
 
 ---
 
 </div>
+
+## 📌 About Stride
+
+### The Problem
+Small business operators (AC repair, plumbing, electrical, home services, clinics) spend hours manually managing customer WhatsApp and live chat streams while trying to run field operations. Incoming inquiries, booking requests, and urgent support complaints get buried in unstructured chat threads, leading to lost revenue, delayed response times, and missed appointment slots.
+
+### The Stride Solution
+**Stride** acts as an autonomous, ambient AI co-pilot for SMB owners. Operating on a **Three-Pane Adaptive Layout Scaffold** with a **380px context-aware right-side sheet**, Stride continuously ingests unstructured customer chat messages, classifies operational intents (`SUPPORT`, `BOOKING`, `LEAD`, `GENERAL`), extracts critical entities (location, time slot, urgency level), estimates financial transaction value (`₹2,500` for AC repair, `₹1,800` for plumbing), and creates actionable cards across 4 pipeline lanes—allowing busy operators to execute decisions in 1 tap without view thrashes or modal overlays.
+
+---
+
+## 💡 Core Value Proposition
+
+- ⚡ **Zero-Modal Workflow**: Replaces intrusive full-screen popups with responsive, co-planar 380px sliding sheets for Analytics, Knowledge Base, and Card Inspection.
+- 🎯 **1-Tap Actionable Task Execution**: Cards embed filled M3 pill buttons (`Confirm Slot`, `Complete Visit`, `Dispatch Supervisor`, `Mark Resolved`) allowing instant operational lane transitions.
+- 💰 **Revenue in Pipeline Aggregation**: AI engine automatically estimates service value based on natural language keywords and aggregates real-time revenue across pipeline lanes.
+- 💬 **Live Chat & Gemini Drafting Aura**: Integrated 2-panel live messenger stream with asymmetric chat bubbles and shifting `.bg-ai-aura` auto-reply draft recommendations.
+- 🎨 **Material 3 'Less is More' Aesthetics**: Minimalist visual geometry with soft surface fills (`#F8F9FA`), zero high-contrast border grids, and 25% expanded whitespace layout.
+
+---
 
 ## 🌟 Key Features
 
